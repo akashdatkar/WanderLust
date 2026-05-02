@@ -4,54 +4,24 @@ const User=require("../models/users.js");
 const wrapAsync = require("../utility/wrapAsync.js");
 const passport=require("passport");
 const { saveRedirectUrl } = require("../middleware.js");
+const { renderSignUpForm, signUp, renderLoginForm, login, logout } = require("../controllers/users.js");
 
 
 //register User
-router.get("/signup", (req,res)=>{
-    res.render("users/signup.ejs");
-})
+router.get("/signup", renderSignUpForm);
 
-router.post("/signup", wrapAsync(async(req,res)=>{
-    try{
-        let {username,email,password}=req.body;
-        const newUser=new User({email,username});
-        let resisteredUser=await User.register(newUser,password)
-        req.login(resisteredUser,(err)=>{
-            if(err){
-                return next(err);
-            }
-            req.flash("success","Welcome to Wanderlust");
-            res.redirect("/listings");
-        })
-    }catch(e){
-       req.flash("error",e.message);
-       res.redirect("/signup");
-    }
-}));
+router.post("/signup", wrapAsync(signUp));
 
 //login User
-router.get("/login", (req,res)=>{
-    res.render("users/login.ejs");
-})
+router.get("/login", renderLoginForm);
 
 router.post("/login",saveRedirectUrl,passport.authenticate("local",{
     failureRedirect:"/login",
     failureFlash:true,
     }),
-    async(req,res)=>{
-    req.flash("success","Welcome to Wanderlust");
-    let redirectUrl=res.locals.redirectUrl || "/listings";
-    res.redirect(redirectUrl);
-})
+    login
+);
 
-router.get("/logout",(req,res,next)=>{
-    req.logout((err)=>{
-        if(err){
-            return next(err);
-        }
-        req.flash("success","You are logged out!");
-        res.redirect("/listings");
-    })
-})
+router.get("/logout",logout);
 
 module.exports=router;

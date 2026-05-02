@@ -11,6 +11,10 @@ const newSchema=new mongoose.Schema({
         type:Date,
         default:Date.now(),
     },
+    auther:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Users",
+    },
 });   
 
 module.exports=mongoose.model("Reviews",newSchema);

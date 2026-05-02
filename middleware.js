@@ -2,6 +2,7 @@ const Listing=require("./models/listing.js");
 const ExpressError=require("./utility/ExpressError.js");
 const {listingSchema}=require("./schema.js");
 const {reviewSchema}=require("./schema.js");
+const Review=require("./models/reviews.js");
 
 module.exports.isLoggedIn=(req,res,next)=>{
     if(!req.isAuthenticated()){
@@ -24,9 +25,19 @@ module.exports.isOwner=async (req,res,next)=>{
     let listing= await Listing.findById(id);  
     if(!listing.owner.equals(res.locals.currentUser._id)){
         req.flash("error","You dont have access to edit");
-        return res.redirect(`/listing/${id}`);
+        return res.redirect(`/listings/${id}`);
     }
     next();
+}
+
+module.exports.isReviewAuther=async (req,res,next)=>{
+    let {id,reviewId}=req.params;
+    let review= await Review.findById(reviewId);  
+    if(!review.auther.equals(res.locals.currentUser._id)){
+        req.flash("error","You dont have access to delete");
+        return res.redirect(`/listings/${id}`);
+    }
+    next(); 
 }
 
 module.exports.validatelisting=(req,res,next)=>{
@@ -40,7 +51,7 @@ module.exports.validatelisting=(req,res,next)=>{
 }
 
 module.exports.validatereview=(req,res,next)=>{
-    const { error } = reviewSchema.validate(req.body);
+    const { error } = reviewSchema.validate(req.body,{ convert: true });
         if(error){
             let errMsg=error.details.map((el)=>el.message).join(",");
             throw new ExpressError(400,errMsg);

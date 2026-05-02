@@ -6,73 +6,31 @@ const {listingSchema}=require("../schema.js");
 const Listing=require("../models/listing.js");
 const {isLoggedIn, isOwner,validatelisting}=require("../middleware.js");
 
+const { index, renderNewForm, showListing, createListing, editListing, updateListing, destroyListing } = require("../controllers/listing.js");
 
+router.route("/")
+.get(wrapAsync(index))
+.post(isLoggedIn,validatelisting,wrapAsync(createListing));
 
-//all listings
-router.get("/", async(req,res)=>{
-    let allListings=await Listing.find({});
-    res.render("listings/index.ejs",{allListings});
-})
+// all listings
+// router.get("/", wrapAsync(index));
 
 //new listing
-router.get("/new",isLoggedIn, (req,res)=>{
-    res.render("listings/new.ejs");
-})
+router.get("/new",isLoggedIn, renderNewForm);
 
 //show listing
-router.get("/:id",validatelisting, async(req,res)=>{
-    let {id}=req.params;
-    let listing=await Listing.findById(id).populate("reviews").populate("owner");
-    if(!listing){
-        req.flash("error","Listing you requested for does not exit!");
-        res.redirect("/listings");
-    }
-    res.render("listings/show.ejs",{listing});
-})
+router.get("/:id",validatelisting, wrapAsync(showListing));
 
 //new Listing
-router.post("/", validatelisting,isLoggedIn,wrapAsync(async(req,res,next)=>{
-        if(!req.body.listing){
-            throw new ExpressError(400,"Send valid Data for Listing");
-        }
-        req.flash("success","New Listing Created!");
-        let listing=req.body.listing;
-        let newListing=new Listing(listing);
-        newListing.owner=req.user._id;
-        await newListing.save();
-        res.redirect("/listings");
-    })
-);
+// router.post("/", validatelisting,isLoggedIn,wrapAsync(createListing));
 
 //edit route
-router.get("/:id/edit",isLoggedIn,isOwner,wrapAsync(async(req,res)=>{
-    let {id}=req.params;
-    let listing=await Listing.findById(id);
-    if(!listing){
-        req.flash("error","Listing you request for does not exit!");
-        res.redirect("/listing");
-    }
-    res.render("listings/edit.ejs",{listing});
-}))
+router.get("/:id/edit",isLoggedIn,isOwner,wrapAsync(editListing));
 
 //update listing
-router.put("/:id",validatelisting,isLoggedIn,isOwner, wrapAsync(async(req,res)=>{
-     if(!req.body.listing){
-        throw new ExpressError(400,"Send valid Data for Listing");
-    }
-    let {id}=req.params;
-    await Listing.findByIdAndUpdate(id,{...req.body.listing});
-    req.flash("success","Listing Updated!");
-    res.redirect(`/listings/${id}`);
-}))
+router.put("/:id",validatelisting,isLoggedIn,isOwner, wrapAsync(updateListing));
 
 //delete listing
-router.delete("/:id",isLoggedIn,isOwner,wrapAsync(async(req,res)=>{
-    let {id}=req.params;
-    await Listing.findByIdAndDelete(id);
-    req.flash("success","Listing Deleted!");
-    res.redirect("/listings");
-}))
-
+router.delete("/:id",isLoggedIn,isOwner,wrapAsync(destroyListing));
 
 module.exports=router;
